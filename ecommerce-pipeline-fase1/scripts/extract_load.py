@@ -6,7 +6,7 @@ Destino: SQLite (local)
 
 import sqlite3
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, UTC
 import time
 import os
 import re
@@ -15,9 +15,8 @@ from selenium import webdriver
 from selenium.webdriver.edge.options import Options
 from bs4 import BeautifulSoup
 
-DB_PATH     = os.path.join(os.path.dirname(__file__), "../sql/ecommerce.db")
-BASE_URL    = "https://listado.mercadolibre.com.mx/celulares-smartphones"
-TOTAL_PAGES = 4  # 4 páginas x 60 productos = ~240 productos
+DB_PATH  = os.path.join(os.path.dirname(__file__), "../sql/ecommerce.db")
+BASE_URL = "https://listado.mercadolibre.com.mx/celulares-smartphones"
 
 
 # ─────────────────────────────────────────
@@ -25,9 +24,8 @@ TOTAL_PAGES = 4  # 4 páginas x 60 productos = ~240 productos
 # ─────────────────────────────────────────
 def crear_driver():
     options = Options()
-    # Sin --headless, Edge corre visible
     options.add_argument("--disable-blink-features=AutomationControlled")
-    options.add_argument("--inprivate")  # modo privado para evitar caché
+    options.add_argument("--inprivate")
     options.add_experimental_option("excludeSwitches", ["enable-automation"])
     options.add_experimental_option("useAutomationExtension", False)
     return webdriver.Edge(options=options)
@@ -47,7 +45,7 @@ def extraer_pagina(driver, url) -> list:
     return soup.find_all("li", class_="ui-search-layout__item")
 
 
-def extract_search_results() -> list[dict]:
+def extract_search_results() -> list:
     driver = crear_driver()
     all_items = []
 
@@ -81,37 +79,30 @@ def transform_data(raw: list) -> pd.DataFrame:
     records = []
 
     for item in raw:
-        # Título y URL
-        titulo_tag = item.find("a", class_="poly-component__title")
-        titulo  = titulo_tag.text.strip() if titulo_tag else None
-        url     = titulo_tag["href"] if titulo_tag else None
+        titulo_tag      = item.find("a", class_="poly-component__title")
+        titulo          = titulo_tag.text.strip() if titulo_tag else None
+        url             = titulo_tag["href"] if titulo_tag else None
 
-        # Imagen
-        img_tag = item.find("img", class_="poly-component__picture")
-        thumbnail = img_tag["src"] if img_tag else None
+        img_tag         = item.find("img", class_="poly-component__picture")
+        thumbnail       = img_tag["src"] if img_tag else None
 
-        # Precio actual
-        precio_tag = item.select_one(".poly-price__current .andes-money-amount__fraction")
-        precio = limpiar_precio(precio_tag.text) if precio_tag else None
+        precio_tag      = item.select_one(".poly-price__current .andes-money-amount__fraction")
+        precio          = limpiar_precio(precio_tag.text) if precio_tag else None
 
-        # Precio original (tachado)
         precio_orig_tag = item.select_one(".andes-money-amount--previous .andes-money-amount__fraction")
         precio_original = limpiar_precio(precio_orig_tag.text) if precio_orig_tag else None
 
-        # Descuento
-        descuento_tag = item.select_one(".poly-price__disc_label")
-        descuento_pct = None
+        descuento_tag   = item.select_one(".poly-price__disc_label")
+        descuento_pct   = None
         if descuento_tag:
             match = re.search(r"(\d+)%", descuento_tag.text)
             descuento_pct = float(match.group(1)) if match else None
 
-        # Envío gratis
-        envio_tag = item.select_one(".poly-shipping-v2__item .poly-phrase-pill")
-        envio_gratis = envio_tag is not None
-        
-        # Rating
-        rating_tag = item.select_one(".poly-phrase-label")
-        rating = float(rating_tag.text.strip()) if rating_tag else None
+        envio_tag       = item.select_one(".poly-shipping-v2__item .poly-phrase-pill")
+        envio_gratis    = envio_tag is not None
+
+        rating_tag      = item.select_one(".poly-phrase-label")
+        rating          = float(rating_tag.text.strip()) if rating_tag else None
 
         records.append({
             "titulo":          titulo,
@@ -123,7 +114,7 @@ def transform_data(raw: list) -> pd.DataFrame:
             "rating":          rating,
             "permalink":       url,
             "thumbnail":       thumbnail,
-            "extraido_en":     datetime.utcnow().isoformat()
+            "extraido_en":     datetime.now(UTC).isoformat()
         })
 
     df = pd.DataFrame(records)
@@ -137,7 +128,18 @@ def transform_data(raw: list) -> pd.DataFrame:
 # ─────────────────────────────────────────
 def load_to_sqlite(df: pd.DataFrame):
     conn = sqlite3.connect(DB_PATH)
-    df.to_sql(name="productos", con=conn, if_exists="append", index=False)
+
+    # Evitar duplicados por título
+    try:
+        df_existing = pd.read_sql("SELECT titulo FROM productos", conn)
+        nuevos = df[~df["titulo"].isin(df_existing["titulo"])]
+        print(f"  🔍 Productos nuevos: {len(nuevos)} | Ya existentes: {len(df) - len(nuevos)}")
+    except Exception:
+        nuevos = df  # tabla vacía, primera vez
+
+    if not nuevos.empty:
+        nuevos.to_sql(name="productos", con=conn, if_exists="append", index=False)
+
     conn.close()
     print(f"  ✅ Guardado en {DB_PATH}")
 

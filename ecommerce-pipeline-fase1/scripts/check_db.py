@@ -1,6 +1,5 @@
 """
 Utilidad para explorar los datos de ecommerce en SQLite.
-Corre esto después de extract_load.py para verificar que todo funciona.
 """
 
 import sqlite3
@@ -12,6 +11,23 @@ DB_PATH = os.path.join(os.path.dirname(__file__), "../sql/ecommerce.db")
 
 def conectar():
     return sqlite3.connect(DB_PATH)
+
+
+def deduplicar():
+    """Elimina duplicados dejando solo el registro más reciente."""
+    conn = conectar()
+    conn.execute("""
+        DELETE FROM productos
+        WHERE rowid NOT IN (
+            SELECT MAX(rowid)
+            FROM productos
+            GROUP BY titulo
+        )
+    """)
+    conn.commit()
+    eliminados = conn.total_changes
+    conn.close()
+    print(f"🧹 Duplicados eliminados: {eliminados} registros")
 
 
 def resumen_general():
@@ -34,9 +50,7 @@ def resumen_general():
 def top_precios():
     conn = conectar()
     df = pd.read_sql("""
-        SELECT
-            titulo,
-            ROUND(precio, 2) AS precio,
+        SELECT titulo, ROUND(precio, 2) AS precio,
             ROUND(precio_original, 2) AS precio_original,
             descuento_pct
         FROM productos
@@ -51,11 +65,7 @@ def top_precios():
 def productos_con_descuento():
     conn = conectar()
     df = pd.read_sql("""
-        SELECT
-            titulo,
-            precio,
-            precio_original,
-            descuento_pct
+        SELECT titulo, precio, precio_original, descuento_pct
         FROM productos
         WHERE descuento_pct > 10
         ORDER BY descuento_pct DESC
@@ -69,8 +79,7 @@ def productos_con_descuento():
 def rating_promedio():
     conn = conectar()
     df = pd.read_sql("""
-        SELECT
-            ROUND(AVG(rating), 2) AS rating_promedio,
+        SELECT ROUND(AVG(rating), 2) AS rating_promedio,
             COUNT(*) AS total_con_rating
         FROM productos
         WHERE rating IS NOT NULL
@@ -81,6 +90,7 @@ def rating_promedio():
 
 
 if __name__ == "__main__":
+    deduplicar()
     resumen_general()
     top_precios()
     productos_con_descuento()
