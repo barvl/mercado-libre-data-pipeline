@@ -55,6 +55,7 @@ python ecommerce-pipeline-fase1/scripts/check_db.py
 
 ## 📁 Estructura del proyecto
 
+```
 mercadolibre-pipeline/
 ├── ecommerce-pipeline-fase1/
 │   ├── scripts/
@@ -70,6 +71,8 @@ mercadolibre-pipeline/
 │   └── sql/
 │
 └── README.md
+```
+
 ---
 
 ## 🛣️ Fases
