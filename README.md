@@ -1,23 +1,24 @@
 # 🛒 E-commerce Data Pipeline — Mercado Libre
 
-Pipeline automatizado que extrae, transforma y carga datos de celulares de Mercado Libre México para análisis en Power BI.
+Pipeline automatizado que extrae, transforma y carga datos de celulares de Mercado Libre México y los visualiza en un dashboard web en tiempo real.
 
 ---
 
 ## 🗺️ Arquitectura
 
 ```
-               Fase 1: Selenium → SQLite
-                        ↓
-          Fase 2: SQLite → PostgreSQL (Supabase)
-                        ↓
-        Fase 3: Power BI → Dashboard (conectado a Supabase)
-                        ↓
-        Fase 4: Apache Airflow (automatización)
-                        ↓
-                Fase 5: Docker 
+Fase 1: Selenium → SQLite
+              ↓
+Fase 2: SQLite → PostgreSQL (Supabase)
+              ↓
+Fase 3: Dashboard web (Streamlit)
+              ↓
+Fase 4: Apache Airflow (automatización)
+              ↓
+Fase 5: Docker
 ```
 
+---
 
 ## 📊 Datos que se extraen
 
@@ -47,7 +48,10 @@ python ecommerce-pipeline-fase1/scripts/extract_load.py
 # 3. Fase 2 — Sincroniza SQLite → PostgreSQL (corre cada hora)
 python ecommerce-pipeline-fase2/scripts/extract_load_pg.py
 
-# 4. Verificar datos en SQLite
+# 4. Fase 3 — Corre el dashboard web
+streamlit run ecommerce-pipeline-fase3/scripts/dashboard.py
+
+# 5. Verificar datos en SQLite
 python ecommerce-pipeline-fase1/scripts/check_db.py
 ```
 
@@ -70,6 +74,11 @@ mercadolibre-pipeline/
 │   │   └── test_conexion.py    ← Prueba de conexión
 │   └── sql/
 │
+├── fase_III/
+│   ├── scripts/
+│   │   └── dashboard.py        ← Dashboard web Streamlit
+│   └── requirements.txt
+│
 └── README.md
 ```
 
@@ -81,7 +90,7 @@ mercadolibre-pipeline/
 |------|--------|-------------|
 | 1 | ✅ Completa | Selenium → SQLite |
 | 2 | ✅ Completa | SQLite → PostgreSQL (Supabase) |
-| 3 | 🔜 | Dashboard en Power BI |
+| 3 | ✅ Completa | Dashboard web (Streamlit) |
 | 4 | 🔜 | Automatización con Apache Airflow |
 | 5 | 🔜 | Dockerización completa |
 
@@ -95,25 +104,7 @@ mercadolibre-pipeline/
 | Selenium + Edge | Extracción de datos |
 | SQLite | Base de datos local |
 | PostgreSQL (Supabase) | Base de datos en la nube |
-| Power BI | Dashboard y visualización |
+| Streamlit | Dashboard web interactivo |
 | Apache Airflow | Automatización |
 | Docker | Contenedores |
-
----
-
-## 📈 Vistas para Power BI
-
-| Vista | Uso sugerido |
-|-------|--------------|
-| `v_ultimo_precio` | KPIs actuales, tablas |
-| `v_precio_por_marca` | Gráfica de barras por marca |
-| `v_tendencia_precios` | Línea de tendencia histórica |
-| `v_mejores_ofertas` | Tabla de ofertas destacadas |
-
-### Conectar Power BI
-1. `Obtener datos` → `Base de datos SQLite`
-2. Seleccionar `data/ecommerce.db`
-3. Importar las vistas anteriores
-
----
 
