@@ -97,15 +97,51 @@ mercadolibre-pipeline/
 
 ---
 
+
+## 🌐 Demo en vivo
+[Ver dashboard →](https://mercado-libre-data-pipeline-mrnvvk3epawz8btrq6xtfa.streamlit.app/)
+
+---
+
+## 📸 Screenshots
+
+### KPIs y Top 10
+![KPIs](assets/kpis.png)
+
+### Gráficas
+![Graficas](assets/grafica_barras.png)
+![Graficas](assets/grafica_circular.png)
+![Graficas](assets/grafica_lineas_dispersion.png)
+
+### Tabla de productos
+![Tabla](assets/tabla_productos.png)
+
+
+---
+
 ## 🛠️ Tecnologías
 
-| Herramienta | Uso |
-|-------------|-----|
-| Python | ETL y scraping |
-| Selenium + Edge | Extracción de datos |
-| SQLite | Base de datos local |
-| PostgreSQL (Supabase) | Base de datos en la nube |
-| Streamlit | Dashboard web interactivo |
-| Apache Airflow | Automatización |
-| Docker | Contenedores |
+![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)
+![Selenium](https://img.shields.io/badge/Selenium-43B02A?style=flat&logo=selenium&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-003B57?style=flat&logo=sqlite&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat&logo=postgresql&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=flat&logo=supabase&logoColor=white)
+![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=flat&logo=streamlit&logoColor=white)
+![Apache Airflow](https://img.shields.io/badge/Apache%20Airflow-017CEE?style=flat&logo=apacheairflow&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white)
+![Pandas](https://img.shields.io/badge/Pandas-150458?style=flat&logo=pandas&logoColor=white)
+![Plotly](https://img.shields.io/badge/Plotly-3F4F75?style=flat&logo=plotly&logoColor=white)
+
+---
+
+## 👤 Autor
+
+**Barbara Badillo**
+- LinkedIn: [linkedin.com/in/barbara-badillo](https://www.linkedin.com/in/barbara-badillo/)
+
+---
+
+## 📄 Licencia
+
+Este proyecto está bajo la licencia MIT. Consulta el archivo [LICENSE](LICENSE) para más detalles.
 
