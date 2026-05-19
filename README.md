@@ -75,10 +75,11 @@ mercadolibre-pipeline/
 │   └── sql/
 │
 ├── fase_III/
-│   ├── scripts/
-│   │   └── dashboard.py        ← Dashboard web Streamlit
-│   └── requirements.txt
-│
+│   └── scripts/
+│        └── dashboard.py        ← Dashboard web Streamlit
+│   
+├──  requirements.txt
+|
 └── README.md
 ```
 
