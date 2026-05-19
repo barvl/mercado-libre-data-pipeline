@@ -12,7 +12,7 @@ st.set_page_config(
 # ─────────────────────────────────────────
 # CONEXIÓN
 # ─────────────────────────────────────────
-DATABASE_URL = "postgresql://postgres.udbpzomalscregiythfy:#HolaZayn32@aws-1-us-east-1.pooler.supabase.com:5432/postgres"
+DATABASE_URL = st.secrets["DATABASE_URL"]
 
 @st.cache_data(ttl=3600)
 def cargar_datos():
