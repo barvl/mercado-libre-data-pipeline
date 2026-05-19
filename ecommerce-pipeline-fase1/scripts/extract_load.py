@@ -1,5 +1,5 @@
 """
-Fase 1 — Pipeline E-commerce: Celulares en Mercado Libre
+Fase 1 — Pipeline E-commerce: Mercado Libre México
 Fuente: Selenium + Edge
 Destino: SQLite (local)
 """
@@ -15,8 +15,14 @@ from selenium import webdriver
 from selenium.webdriver.edge.options import Options
 from bs4 import BeautifulSoup
 
-DB_PATH  = os.path.join(os.path.dirname(__file__), "../sql/ecommerce.db")
-BASE_URL = "https://listado.mercadolibre.com.mx/celulares-smartphones"
+DB_PATH = os.path.join(os.path.dirname(__file__), "../sql/ecommerce.db")
+
+URLS = [
+    ("https://listado.mercadolibre.com.mx/celulares-smartphones", "Celulares"),
+    ("https://listado.mercadolibre.com.mx/tablets", "Tablets"),
+    ("https://listado.mercadolibre.com.mx/laptops-accesorios/laptops", "Laptops"),
+    ("https://listado.mercadolibre.com.mx/accesorios-celulares", "Accesorios"),
+]
 
 
 # ─────────────────────────────────────────
@@ -49,17 +55,16 @@ def extract_search_results() -> list:
     driver = crear_driver()
     all_items = []
 
-    urls = [
-        BASE_URL,
-        f"{BASE_URL}_Desde_61",
-        f"{BASE_URL}_Desde_121",
-        f"{BASE_URL}_Desde_181",
-    ]
-
-    for i, url in enumerate(urls, 1):
-        items = extraer_pagina(driver, url)
-        all_items.extend(items)
-        print(f"  📦 Página {i}: {len(items)} productos obtenidos")
+    for base_url, categoria in URLS:
+        offsets = [0, 61, 121, 181]
+        for i, offset in enumerate(offsets, 1):
+            url = base_url if offset == 0 else f"{base_url}_Desde_{offset}"
+            items = extraer_pagina(driver, url)
+            for item in items:
+                item["categoria"] = categoria
+            all_items.extend(items)
+            print(f"  📦 {categoria} - Página {i}: {len(items)} productos")
+        print(f"  ✅ {categoria} completado")
 
     driver.quit()
     print(f"  ✅ Total extraído: {len(all_items)} productos")
@@ -72,7 +77,10 @@ def extract_search_results() -> list:
 def limpiar_precio(texto: str) -> float:
     if not texto:
         return None
-    return float(re.sub(r"[^\d]", "", texto))
+    try:
+        return float(re.sub(r"[^\d]", "", texto))
+    except ValueError:
+        return None
 
 
 def transform_data(raw: list) -> pd.DataFrame:
@@ -86,11 +94,21 @@ def transform_data(raw: list) -> pd.DataFrame:
         img_tag         = item.find("img", class_="poly-component__picture")
         thumbnail       = img_tag["src"] if img_tag else None
 
-        precio_tag      = item.select_one(".poly-price__current .andes-money-amount__fraction")
-        precio          = limpiar_precio(precio_tag.text) if precio_tag else None
+        precio_tag = item.select_one(".poly-price__current .andes-money-amount__fraction")
+        precio = None
+        if precio_tag:
+            texto = precio_tag.text.strip()
+
+        if re.sub(r"[,.]", "", texto).isdigit():
+            precio = limpiar_precio(texto)
 
         precio_orig_tag = item.select_one(".andes-money-amount--previous .andes-money-amount__fraction")
-        precio_original = limpiar_precio(precio_orig_tag.text) if precio_orig_tag else None
+        precio_original = None
+        if precio_orig_tag:
+            texto = precio_orig_tag.text.strip()
+
+        if re.sub(r"[,.]", "", texto).isdigit():
+            precio_original = limpiar_precio(texto)
 
         descuento_tag   = item.select_one(".poly-price__disc_label")
         descuento_pct   = None
@@ -98,11 +116,16 @@ def transform_data(raw: list) -> pd.DataFrame:
             match = re.search(r"(\d+)%", descuento_tag.text)
             descuento_pct = float(match.group(1)) if match else None
 
-        envio_tag       = item.select_one(".poly-shipping-v2__item .poly-phrase-pill")
-        envio_gratis    = envio_tag is not None
+        envio_tag    = item.select_one(".poly-shipping-v2__item .poly-phrase-pill")
+        envio_gratis = envio_tag is not None
 
-        rating_tag      = item.select_one(".poly-phrase-label")
-        rating          = float(rating_tag.text.strip()) if rating_tag else None
+        rating_tag = item.select_one(".poly-phrase-label")
+        rating = None
+        if rating_tag:
+            try:
+                rating = float(rating_tag.text.strip())
+            except ValueError:
+                rating = None
 
         records.append({
             "titulo":          titulo,
@@ -114,6 +137,7 @@ def transform_data(raw: list) -> pd.DataFrame:
             "rating":          rating,
             "permalink":       url,
             "thumbnail":       thumbnail,
+            "categoria":       item.get("categoria"),
             "extraido_en":     datetime.now(UTC).isoformat()
         })
 
@@ -129,13 +153,12 @@ def transform_data(raw: list) -> pd.DataFrame:
 def load_to_sqlite(df: pd.DataFrame):
     conn = sqlite3.connect(DB_PATH)
 
-    # Evitar duplicados por título
     try:
         df_existing = pd.read_sql("SELECT titulo FROM productos", conn)
         nuevos = df[~df["titulo"].isin(df_existing["titulo"])]
         print(f"  🔍 Productos nuevos: {len(nuevos)} | Ya existentes: {len(df) - len(nuevos)}")
     except Exception:
-        nuevos = df  # tabla vacía, primera vez
+        nuevos = df
 
     if not nuevos.empty:
         nuevos.to_sql(name="productos", con=conn, if_exists="append", index=False)
@@ -162,8 +185,8 @@ if __name__ == "__main__":
     INTERVALO = 3600
 
     print("=" * 55)
-    print("  E-commerce Pipeline — Celulares Mercado Libre MX")
-    print(f"  Fuente: Selenium + Edge")
+    print("  E-commerce Pipeline — Mercado Libre MX")
+    print(f"  Categorías: Celulares, Tablets, Laptops, Accesorios")
     print(f"  Intervalo: cada {INTERVALO // 60} minutos")
     print("=" * 55)
 

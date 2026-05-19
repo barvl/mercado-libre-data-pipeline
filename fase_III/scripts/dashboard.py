@@ -27,7 +27,18 @@ df = cargar_datos()
 # HEADER
 # ─────────────────────────────────────────
 st.title("🛒 E-commerce Data Pipeline — Mercado Libre")
-st.markdown("Pipeline automatizado de celulares en Mercado Libre México")
+st.markdown("Pipeline automatizado de productos en Mercado Libre México")
+st.divider()
+
+# ─────────────────────────────────────────
+# FILTRO POR CATEGORÍA
+# ─────────────────────────────────────────
+categorias = ["Todas"] + sorted(df["categoria"].dropna().unique().tolist())
+categoria_sel = st.selectbox("📂 Filtrar por categoría", categorias)
+
+if categoria_sel != "Todas":
+    df = df[df["categoria"] == categoria_sel]
+
 st.divider()
 
 # ─────────────────────────────────────────
@@ -54,7 +65,7 @@ col1, col2 = st.columns(2)
 
 with col1:
     st.subheader("💎 Top 10 productos más caros")
-    top_caros = df.nlargest(10, "precio")[["titulo", "precio"]]
+    top_caros = df.nlargest(10, "precio")[["titulo", "precio", "categoria"]]
     top_caros["titulo"] = top_caros["titulo"].str[:40] + "..."
     fig = px.bar(top_caros, x="precio", y="titulo", orientation="h",
                 color_discrete_sequence=["#F5D547"])
@@ -63,7 +74,7 @@ with col1:
 
 with col2:
     st.subheader("🔥 Top 10 mayor descuento")
-    top_descuento = df.dropna(subset=["descuento_pct"]).nlargest(10, "descuento_pct")[["titulo", "descuento_pct"]]
+    top_descuento = df.dropna(subset=["descuento_pct"]).nlargest(10, "descuento_pct")[["titulo", "descuento_pct", "categoria"]]
     top_descuento["titulo"] = top_descuento["titulo"].str[:40] + "..."
     fig2 = px.bar(top_descuento, x="descuento_pct", y="titulo", orientation="h",
                 color_discrete_sequence=["#374151"])
@@ -73,9 +84,14 @@ with col2:
 col3, col4 = st.columns(2)
 
 with col3:
-    st.subheader("📊 Distribución de precios")
-    fig3 = px.histogram(df, x="precio", nbins=20, color_discrete_sequence=["#F5D547"])
-    fig3.update_layout(xaxis_title="Precio (MXN)", yaxis_title="Cantidad", bargap=0.15)
+    st.subheader("📊 Productos por categoría")
+    cat_counts = df["categoria"].value_counts().reset_index()
+    cat_counts.columns = ["Categoría", "Cantidad"]
+    fig3 = px.bar(cat_counts, x="Categoría", y="Cantidad",
+                color_discrete_sequence=["#F5D547"],
+                text="Cantidad")
+    fig3.update_traces(textposition="outside", marker_line_color="#374151", marker_line_width=1.5)
+    fig3.update_layout(xaxis_title="Categoría", yaxis_title="Cantidad", bargap=0.3)
     st.plotly_chart(fig3, use_container_width=True)
 
 with col4:
@@ -90,36 +106,31 @@ st.divider()
 col5, col6 = st.columns(2)
 
 with col5:
-    st.subheader("📈 Productos por rango de precio")
-    df["rango"] = pd.cut(df["precio"],
-                        bins=[0, 2000, 5000, 10000, 25000],
-                        labels=["$0-2k", "$2k-5k", "$5k-10k", "$10k+"])
-    rango_counts = df["rango"].value_counts().sort_index().reset_index()
-    rango_counts.columns = ["Rango", "Cantidad"]
-    fig5 = px.line(rango_counts, x="Rango", y="Cantidad",
+    st.subheader("📈 Precio promedio por categoría")
+    precio_cat = df.groupby("categoria")["precio"].mean().reset_index()
+    precio_cat.columns = ["Categoría", "Precio Promedio"]
+    precio_cat = precio_cat.sort_values("Precio Promedio", ascending=False)
+    fig5 = px.line(precio_cat, x="Categoría", y="Precio Promedio",
                 color_discrete_sequence=["#F5D547"],
                 markers=True)
     fig5.update_traces(
         line=dict(width=2.5),
         marker=dict(size=10, line=dict(color="#374151", width=1.5))
     )
-    fig5.update_layout(xaxis_title="Rango de precio", yaxis_title="Cantidad")
+    fig5.update_layout(xaxis_title="Categoría", yaxis_title="Precio Promedio (MXN)")
     st.plotly_chart(fig5, use_container_width=True)
 
 with col6:
     st.subheader("⭐ Rating vs Precio")
     fig6 = px.scatter(df.dropna(subset=["rating"]),
                     x="precio", y="rating",
-                    hover_data=["titulo"],
-                    color_discrete_sequence=["#F5D547"],
-                    trendline="ols")  # línea de tendencia
+                    hover_data=["titulo", "categoria"],
+                    color="categoria",
+                    color_discrete_sequence=["#F5D547", "#374151", "#A3A3A3", "#FBBF24"],
+                    trendline="ols")
     fig6.update_traces(
-        marker=dict(size=10, opacity=0.7, line=dict(color="#374151", width=1.5)),
+        marker=dict(size=10, opacity=0.7),
         selector=dict(mode="markers")
-    )
-    fig6.update_traces(
-        line=dict(color="#374151", width=2),
-        selector=dict(mode="lines")
     )
     fig6.update_layout(
         xaxis_title="Precio (MXN)",
@@ -128,21 +139,24 @@ with col6:
     )
     st.plotly_chart(fig6, use_container_width=True)
 
-    st.divider()
+st.divider()
 
 # ─────────────────────────────────────────
-# Insights
+# INSIGHTS
 # ─────────────────────────────────────────
-
 st.subheader("💡 Insights")
 col1, col2, col3 = st.columns(3)
 
+pct_envio_total = df['envio_gratis'].mean() * 100
+categoria_mas_cara = df.groupby("categoria")["precio"].mean().idxmax()
+precio_mas_comun = df["precio"].median()
+
 with col1:
-    st.info("📦 El **86%** de los productos tiene envío gratis")
+    st.info(f"📦 El **{pct_envio_total:.0f}%** de los productos tiene envío gratis")
 with col2:
-    st.info("💰 La mayoría de celulares está en el rango **$2k-$5k MXN**")
+    st.info(f"💰 La categoría más cara es **{categoria_mas_cara}**")
 with col3:
-    st.info("⭐ Los productos más caros tienden a tener **mejor rating**")
+    st.info(f"⭐ Los productos más caros tienden a tener **mejor rating**")
 
 st.divider()
 
@@ -150,21 +164,15 @@ st.divider()
 # TABLA
 # ─────────────────────────────────────────
 st.subheader("📋 Tabla de productos")
-tabla = df[["titulo", "precio", "precio_original", "descuento_pct", "envio_gratis", "rating"]].sort_values("precio", ascending=False).copy()
+tabla = df[["titulo", "categoria", "precio", "precio_original", "descuento_pct", "envio_gratis", "rating"]].sort_values("precio", ascending=False).copy()
 
-# Renombrar columnas
-tabla.columns = ["Título", "Precio (MXN)", "Precio Original (MXN)", "Descuento (%)", "Envío Gratis", "Rating"]
+tabla.columns = ["Título", "Categoría", "Precio (MXN)", "Precio Original (MXN)", "Descuento (%)", "Envío Gratis", "Rating"]
 
-# Reemplazar None/NaN
 tabla["Precio Original (MXN)"] = tabla["Precio Original (MXN)"].fillna("-")
 tabla["Descuento (%)"] = tabla["Descuento (%)"].fillna("-")
 tabla["Rating"] = tabla["Rating"].fillna("-")
 
-st.dataframe(
-    tabla,
-    use_container_width=True,
-    hide_index=True
-)
+st.dataframe(tabla, use_container_width=True, hide_index=True)
 
 # ─────────────────────────────────────────
 # FOOTER

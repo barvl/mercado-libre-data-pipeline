@@ -32,9 +32,14 @@ def crear_tabla():
                 rating           NUMERIC,
                 permalink        TEXT,
                 thumbnail        TEXT,
+                categoria        TEXT,
                 extraido_en      TIMESTAMPTZ
             )
         """))
+        try:
+            conn.execute(text("ALTER TABLE productos ADD COLUMN IF NOT EXISTS categoria TEXT"))
+        except:
+            pass
         conn.commit()
     print("  ✅ Tabla 'productos' lista en PostgreSQL")
 

@@ -47,10 +47,28 @@ def resumen_general():
     print(df.to_string(index=False))
 
 
+def resumen_por_categoria():
+    conn = conectar()
+    df = pd.read_sql("""
+        SELECT
+            categoria,
+            COUNT(*)                        AS total_productos,
+            ROUND(MIN(precio), 2)           AS precio_minimo,
+            ROUND(MAX(precio), 2)           AS precio_maximo,
+            ROUND(AVG(precio), 2)           AS precio_promedio
+        FROM productos
+        GROUP BY categoria
+        ORDER BY precio_promedio DESC
+    """, conn)
+    conn.close()
+    print("\n📂 Resumen por categoría:")
+    print(df.to_string(index=False))
+
+
 def top_precios():
     conn = conectar()
     df = pd.read_sql("""
-        SELECT titulo, ROUND(precio, 2) AS precio,
+        SELECT titulo, categoria, ROUND(precio, 2) AS precio,
             ROUND(precio_original, 2) AS precio_original,
             descuento_pct
         FROM productos
@@ -65,7 +83,7 @@ def top_precios():
 def productos_con_descuento():
     conn = conectar()
     df = pd.read_sql("""
-        SELECT titulo, precio, precio_original, descuento_pct
+        SELECT titulo, categoria, precio, precio_original, descuento_pct
         FROM productos
         WHERE descuento_pct > 10
         ORDER BY descuento_pct DESC
@@ -89,10 +107,28 @@ def rating_promedio():
     print(df.to_string(index=False))
 
 
+def rating_por_categoria():
+    conn = conectar()
+    df = pd.read_sql("""
+        SELECT categoria,
+            ROUND(AVG(rating), 2) AS rating_promedio,
+            COUNT(*) AS total_con_rating
+        FROM productos
+        WHERE rating IS NOT NULL
+        GROUP BY categoria
+        ORDER BY rating_promedio DESC
+    """, conn)
+    conn.close()
+    print("\n⭐ Rating promedio por categoría:")
+    print(df.to_string(index=False))
+
+
 if __name__ == "__main__":
     deduplicar()
     resumen_general()
+    resumen_por_categoria()
     top_precios()
     productos_con_descuento()
     rating_promedio()
+    rating_por_categoria()
 
