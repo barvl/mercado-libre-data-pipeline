@@ -4,3 +4,8 @@ pandas
 sqlalchemy
 psycopg2-binary
 statsmodels
+python-dotenv
+webdriver-manager
+selenium
+beautifulsoup4
+lxml

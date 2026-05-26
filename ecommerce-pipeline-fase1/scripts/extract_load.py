@@ -1,6 +1,6 @@
 """
 Fase 1 — Pipeline E-commerce: Mercado Libre México
-Fuente: Selenium + Edge
+Fuente: Selenium + Chrome Headless
 Destino: SQLite (local)
 """
 
@@ -12,7 +12,8 @@ import os
 import re
 
 from selenium import webdriver
-from selenium.webdriver.edge.options import Options
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 from bs4 import BeautifulSoup
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "../sql/ecommerce.db")
@@ -26,15 +27,26 @@ URLS = [
 
 
 # ─────────────────────────────────────────
-# DRIVER
+# DRIVER  
+#          GitHub Actions y máquina local
 # ─────────────────────────────────────────
 def crear_driver():
-    options = Options()
-    options.add_argument("--disable-blink-features=AutomationControlled")
-    options.add_argument("--inprivate")
-    options.add_experimental_option("excludeSwitches", ["enable-automation"])
-    options.add_experimental_option("useAutomationExtension", False)
-    return webdriver.Edge(options=options)
+    options_chrome = webdriver.ChromeOptions()
+    options_edge = Options()
+    
+    # Si está en GitHub Actions usa Chrome, si no usa Edge
+    if os.getenv("GITHUB_ACTIONS"):
+        options_chrome.add_argument("--headless")
+        options_chrome.add_argument("--no-sandbox")
+        options_chrome.add_argument("--disable-dev-shm-usage")
+        options_chrome.add_argument("--disable-blink-features=AutomationControlled")
+        return webdriver.Chrome(options=options_chrome)
+    else:
+        options_edge.add_argument("--disable-blink-features=AutomationControlled")
+        options_edge.add_argument("--inprivate")
+        options_edge.add_experimental_option("excludeSwitches", ["enable-automation"])
+        options_edge.add_experimental_option("useAutomationExtension", False)
+        return webdriver.Edge(options=options_edge)
 
 
 # ─────────────────────────────────────────
@@ -98,17 +110,15 @@ def transform_data(raw: list) -> pd.DataFrame:
         precio = None
         if precio_tag:
             texto = precio_tag.text.strip()
-
-        if re.sub(r"[,.]", "", texto).isdigit():
-            precio = limpiar_precio(texto)
+            if re.sub(r"[,.]", "", texto).isdigit():
+                precio = limpiar_precio(texto)
 
         precio_orig_tag = item.select_one(".andes-money-amount--previous .andes-money-amount__fraction")
         precio_original = None
         if precio_orig_tag:
             texto = precio_orig_tag.text.strip()
-
-        if re.sub(r"[,.]", "", texto).isdigit():
-            precio_original = limpiar_precio(texto)
+            if re.sub(r"[,.]", "", texto).isdigit():
+                precio_original = limpiar_precio(texto)
 
         descuento_tag   = item.select_one(".poly-price__disc_label")
         descuento_pct   = None
@@ -182,19 +192,13 @@ def run_pipeline():
 # EJECUCIÓN
 # ─────────────────────────────────────────
 if __name__ == "__main__":
-    INTERVALO = 3600
-
     print("=" * 55)
     print("  E-commerce Pipeline — Mercado Libre MX")
     print(f"  Categorías: Celulares, Tablets, Laptops, Accesorios")
-    print(f"  Intervalo: cada {INTERVALO // 60} minutos")
     print("=" * 55)
 
-    while True:
-        try:
-            run_pipeline()
-        except Exception as e:
-            print(f"  ❌ Error: {e}")
-
-        print(f"  ⏳ Próxima ejecución en {INTERVALO // 60} minutos...")
-        time.sleep(INTERVALO)
+    try:
+        run_pipeline()
+    except Exception as e:
+        print(f"  ❌ Error: {e}")
+        raise
