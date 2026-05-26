@@ -2,49 +2,28 @@ name: 🛒 Mercado Libre Pipeline
 
 on:
   schedule:
-    - cron: "0 * * * *"   # cada hora en punto (UTC)
-  workflow_dispatch:        # también permite correrlo manualmente desde GitHub
+    - cron: "0 * * * *"
+  workflow_dispatch:
 
 jobs:
-  pipeline:
-    name: Scrape → SQLite → PostgreSQL
+  sync-to-postgres:
+    name: SQLite → PostgreSQL
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Bajar el código
       - name: 📥 Checkout repo
         uses: actions/checkout@v4
 
-      # 2. Python
       - name: 🐍 Setup Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: "pip"
 
-      # 3. Chrome + ChromeDriver (headless)
-      - name: 🌐 Setup Chrome
-        uses: browser-actions/setup-chrome@v1
-
-      # 4. Dependencias
       - name: 📦 Instalar dependencias
         run: pip install -r requirements.txt
 
-      # 5. Fase 1 — Scraping → SQLite
-      - name: 🕷️ Fase 1 · Selenium → SQLite
-        run: python ecommerce-pipeline-fase1/scripts/extract_load.py
-
-      # 6. Fase 2 — SQLite → PostgreSQL
       - name: 🐘 Fase 2 · SQLite → PostgreSQL
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: python ecommerce-pipeline-fase2/scripts/extract_load_pg.py
-
-      # 7. Subir el .db como artefacto (opcional, útil para debug)
-      - name: 💾 Guardar SQLite como artefacto
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ecommerce-db
-          path: ecommerce-pipeline-fase1/sql/ecommerce.db
-          retention-days: 7
