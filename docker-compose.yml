@@ -1,0 +1,38 @@
+version: "3.8"
+
+services:
+
+  # Fase 1 — Scraping y carga a SQLite
+  scraper:
+    build: .
+    container_name: ml_scraper
+    command: python ecommerce-pipeline-fase1/scripts/extract_load.py
+    volumes:
+      - ./ecommerce-pipeline-fase1/sql:/app/ecommerce-pipeline-fase1/sql
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+
+  # Fase 2 — Sincronización SQLite → PostgreSQL
+  sync:
+    build: .
+    container_name: ml_sync
+    command: python ecommerce-pipeline-fase2/scripts/extract_load_pg.py
+    volumes:
+      - ./ecommerce-pipeline-fase1/sql:/app/ecommerce-pipeline-fase1/sql
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+    depends_on:
+      - scraper
+    restart: unless-stopped
+
+  # Fase 3 — Dashboard Streamlit
+  dashboard:
+    build: .
+    container_name: ml_dashboard
+    command: streamlit run fase_III/scripts/dashboard.py --server.port=8501 --server.address=0.0.0.0
+    ports:
+      - "8501:8501"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+    restart: unless-stopped

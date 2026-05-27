@@ -1,6 +1,6 @@
 # 🛒 E-commerce Data Pipeline — Mercado Libre
 
-Pipeline automatizado que extrae, transforma y carga datos de celulares de Mercado Libre México y los visualiza en un dashboard web en tiempo real.
+Pipeline automatizado que extrae, transforma y carga datos de productos tecnológicos de Mercado Libre México — Celulares, Tablets, Laptops y Accesorios — y los visualiza en un dashboard web en tiempo real.
 
 ---
 
@@ -13,7 +13,7 @@ Fase 2: SQLite → PostgreSQL (Supabase)
               ↓
 Fase 3: Dashboard web (Streamlit)
               ↓
-Fase 4: Apache Airflow (automatización)
+Fase 4: GitHub Actions (automatización)
               ↓
 Fase 5: Docker
 ```
@@ -24,6 +24,7 @@ Fase 5: Docker
 
 | Campo | Descripción |
 |-------|-------------|
+| `categoria` | Celulares, Tablets, Laptops, Accesorios |
 | `titulo` | Nombre del producto |
 | `precio` | Precio actual (MXN) |
 | `precio_original` | Precio antes del descuento |
@@ -38,6 +39,8 @@ Fase 5: Docker
 
 ## ⚙️ Instalación y uso
 
+
+
 ```bash
 # 1. Instalar dependencias
 pip install -r requirements.txt
@@ -49,10 +52,13 @@ python ecommerce-pipeline-fase1/scripts/extract_load.py
 python ecommerce-pipeline-fase2/scripts/extract_load_pg.py
 
 # 4. Fase 3 — Corre el dashboard web
-streamlit run ecommerce-pipeline-fase3/scripts/dashboard.py
+streamlit run fase_III/scripts/dashboard.py
 
 # 5. Verificar datos en SQLite
 python ecommerce-pipeline-fase1/scripts/check_db.py
+
+# 6. Correr con Docker (requiere 8GB RAM)
+docker-compose up
 ```
 
 ---
@@ -61,25 +67,31 @@ python ecommerce-pipeline-fase1/scripts/check_db.py
 
 ```
 mercadolibre-pipeline/
+├── .github/
+│   └── workflows/
+│       └── pipleline.yml           ← GitHub Actions (sincronización automática)
+│
 ├── ecommerce-pipeline-fase1/
 │   ├── scripts/
-│   │   ├── extract_load.py     ← Selenium → SQLite
-│   │   └── check_db.py         ← Exploración de datos
+│   │   ├── extract_load.py         ← Selenium → SQLite
+│   │   └── check_db.py             ← Exploración de datos
 │   └── sql/
-│       └── ecommerce.db        ← Base de datos local
+│       └── ecommerce.db            ← Base de datos local
 │
 ├── ecommerce-pipeline-fase2/
 │   ├── scripts/
-│   │   ├── extract_load_pg.py  ← SQLite → PostgreSQL
-│   │   └── test_conexion.py    ← Prueba de conexión
+│   │   ├── extract_load_pg.py      ← SQLite → PostgreSQL
+│   │   └── test_conexion.py        ← Prueba de conexión
 │   └── sql/
 │
 ├── fase_III/
 │   └── scripts/
-│        └── dashboard.py        ← Dashboard web Streamlit
-│   
-├──  requirements.txt
-|
+│       └── dashboard.py            ← Dashboard web Streamlit
+│
+├── assets/                         ← Screenshots del dashboard
+├── Dockerfile                      ← Imagen Docker del proyecto
+├── docker-compose.yml              ← Orquestación de contenedores
+├── requirements.txt
 └── README.md
 ```
 
@@ -92,8 +104,8 @@ mercadolibre-pipeline/
 | 1 | ✅ Completa | Selenium → SQLite |
 | 2 | ✅ Completa | SQLite → PostgreSQL (Supabase) |
 | 3 | ✅ Completa | Dashboard web (Streamlit) |
-| 4 | 🔜 | Automatización con Apache Airflow |
-| 5 | 🔜 | Dockerización completa |
+| 4 | ✅ Completa | Automatización con GitHub Actions + Task Scheduler |
+| 5 | ✅ Completa | Dockerización completa |
 
 ---
 
@@ -105,7 +117,7 @@ mercadolibre-pipeline/
 
 ## 📸 Screenshots
 
-### KPIs y Top 10
+### KPIs
 ![KPIs](assets/kpis.png)
 
 ### Gráficas
@@ -127,10 +139,11 @@ mercadolibre-pipeline/
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat&logo=postgresql&logoColor=white)
 ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=flat&logo=supabase&logoColor=white)
 ![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=flat&logo=streamlit&logoColor=white)
-![Apache Airflow](https://img.shields.io/badge/Apache%20Airflow-017CEE?style=flat&logo=apacheairflow&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white)
-![Pandas](https://img.shields.io/badge/Pandas-150458?style=flat&logo=pandas&logoColor=white)
 ![Plotly](https://img.shields.io/badge/Plotly-3F4F75?style=flat&logo=plotly&logoColor=white)
+![Pandas](https://img.shields.io/badge/Pandas-150458?style=flat&logo=pandas&logoColor=white)
+![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-2088FF?style=flat&logo=githubactions&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white)
+![BeautifulSoup](https://img.shields.io/badge/BeautifulSoup-59666C?style=flat&logo=python&logoColor=white)
 
 ---
 
