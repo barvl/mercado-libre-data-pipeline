@@ -31,15 +31,16 @@ URLS = [
 #          GitHub Actions y máquina local
 # ─────────────────────────────────────────
 def crear_driver():
-    if os.getenv("GITHUB_ACTIONS") or os.getenv("DOCKER_ENV"):
+    if os.getenv("DOCKER_ENV") or os.getenv("GITHUB_ACTIONS"):
+        from selenium.webdriver.chrome.service import Service
         options = webdriver.ChromeOptions()
         options.add_argument("--headless")
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--disable-gpu")
-        options.add_argument("--remote-debugging-port=9222")
         options.binary_location = "/usr/bin/chromium"
-        return webdriver.Chrome(options=options)
+        service = Service("/usr/bin/chromedriver")
+        return webdriver.Chrome(service=service, options=options)
     else:
         options = Options()
         options.add_argument("--disable-blink-features=AutomationControlled")
