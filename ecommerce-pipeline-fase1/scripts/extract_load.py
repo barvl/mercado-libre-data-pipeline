@@ -31,22 +31,22 @@ URLS = [
 #          GitHub Actions y máquina local
 # ─────────────────────────────────────────
 def crear_driver():
-    options_chrome = webdriver.ChromeOptions()
-    options_edge = Options()
-    
-    # Si está en GitHub Actions usa Chrome, si no usa Edge
-    if os.getenv("GITHUB_ACTIONS"):
-        options_chrome.add_argument("--headless")
-        options_chrome.add_argument("--no-sandbox")
-        options_chrome.add_argument("--disable-dev-shm-usage")
-        options_chrome.add_argument("--disable-blink-features=AutomationControlled")
-        return webdriver.Chrome(options=options_chrome)
+    if os.getenv("GITHUB_ACTIONS") or os.getenv("DOCKER_ENV"):
+        options = webdriver.ChromeOptions()
+        options.add_argument("--headless")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--disable-gpu")
+        options.add_argument("--remote-debugging-port=9222")
+        options.binary_location = "/usr/bin/chromium"
+        return webdriver.Chrome(options=options)
     else:
-        options_edge.add_argument("--disable-blink-features=AutomationControlled")
-        options_edge.add_argument("--inprivate")
-        options_edge.add_experimental_option("excludeSwitches", ["enable-automation"])
-        options_edge.add_experimental_option("useAutomationExtension", False)
-        return webdriver.Edge(options=options_edge)
+        options = Options()
+        options.add_argument("--disable-blink-features=AutomationControlled")
+        options.add_argument("--inprivate")
+        options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        options.add_experimental_option("useAutomationExtension", False)
+        return webdriver.Edge(options=options)
 
 
 # ─────────────────────────────────────────
