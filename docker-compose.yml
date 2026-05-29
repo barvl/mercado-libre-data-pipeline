@@ -2,7 +2,6 @@ version: "3.8"
 
 services:
 
-  # Fase 1 — Scraping y carga a SQLite
   scraper:
     build: .
     container_name: ml_scraper
@@ -12,9 +11,14 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - DOCKER_ENV=true
-    restart: unless-stopped
+    restart: no  # script batch — no reiniciar en loop
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /app/ecommerce-pipeline-fase1/sql/ecommerce.db"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 5s
 
-  # Fase 2 — Sincronización SQLite → PostgreSQL
   sync:
     build: .
     container_name: ml_sync
@@ -24,10 +28,10 @@ services:
     environment:
       - DATABASE_URL=${DATABASE_URL}
     depends_on:
-      - scraper
-    restart: unless-stopped
+      scraper:
+        condition: service_healthy  # espera a que .db exista
+    restart: no
 
-  # Fase 3 — Dashboard Streamlit
   dashboard:
     build: .
     container_name: ml_dashboard
@@ -36,4 +40,4 @@ services:
       - "8501:8501"
     environment:
       - DATABASE_URL=${DATABASE_URL}
-    restart: unless-stopped
+    restart: unless-stopped  # este sí es un proceso largo — correcto
