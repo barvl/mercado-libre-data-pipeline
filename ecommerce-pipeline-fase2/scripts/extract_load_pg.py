@@ -17,7 +17,6 @@ import os
 # En GitHub Actions: configura los Secrets en el repo
 # ─────────────────────────────────────────
 def get_database_url() -> str:
-    # Intenta cargar .env si existe (útil en local)
     try:
         from dotenv import load_dotenv
         load_dotenv()
@@ -31,6 +30,9 @@ def get_database_url() -> str:
             "  - Local: crea un archivo .env con DATABASE_URL=postgresql://...\n"
             "  - GitHub Actions: agrega el Secret en Settings → Secrets → Actions"
         )
+    # compatibilidad con SQLAlchemy 2.x
+    if url.startswith("postgresql://"):
+        url = url.replace("postgresql://", "postgresql+psycopg2://", 1)
     return url
 
 
