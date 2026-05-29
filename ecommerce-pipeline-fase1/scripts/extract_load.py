@@ -27,12 +27,11 @@ URLS = [
 
 
 # ─────────────────────────────────────────
-# DRIVER  
+# DRIVER
 #          GitHub Actions y máquina local
 # ─────────────────────────────────────────
 def crear_driver():
     if os.getenv("DOCKER_ENV") or os.getenv("GITHUB_ACTIONS"):
-        from selenium.webdriver.chrome.service import Service
         options = webdriver.ChromeOptions()
         options.add_argument("--headless")
         options.add_argument("--no-sandbox")
@@ -198,8 +197,10 @@ if __name__ == "__main__":
     print(f"  Categorías: Celulares, Tablets, Laptops, Accesorios")
     print("=" * 55)
 
-    try:
-        run_pipeline()
-    except Exception as e:
-        print(f"  ❌ Error: {e}")
-        raise
+    while True:
+        try:
+            run_pipeline()
+        except Exception as e:
+            print(f"  ❌ Error: {e}")
+        print("  ⏳ Esperando 1 hora para la siguiente ejecución...")
+        time.sleep(3600)
