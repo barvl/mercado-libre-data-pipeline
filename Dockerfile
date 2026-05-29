@@ -16,3 +16,5 @@ ENV PYTHONUNBUFFERED=1
 ENV DOCKER_ENV=true
 ENV CHROME_BIN=/usr/bin/chromium
 ENV CHROMEDRIVER_PATH=/usr/bin/chromedriver
+
+CMD ["python", "ecommerce-pipeline-fase1/scripts/extract_load.py"]
