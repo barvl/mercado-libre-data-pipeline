@@ -30,11 +30,16 @@ def get_database_url() -> str:
             "  - Local: crea un archivo .env con DATABASE_URL=postgresql://...\n"
             "  - GitHub Actions: agrega el Secret en Settings → Secrets → Actions"
         )
+    # Forzar minúsculas en el esquema
+    url = url.strip()
+    if "://" in url:
+        scheme, rest = url.split("://", 1)
+        url = scheme.lower() + "://" + rest
+
     # compatibilidad con SQLAlchemy 2.x
     if url.startswith("postgresql://"):
         url = url.replace("postgresql://", "postgresql+psycopg2://", 1)
     return url
-
 
 SQLITE_PATH = os.path.join(
     os.path.dirname(__file__),
