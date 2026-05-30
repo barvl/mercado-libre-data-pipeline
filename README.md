@@ -6,17 +6,7 @@ Pipeline automatizado que extrae, transforma y carga datos de productos tecnoló
 
 ## 🗺️ Arquitectura
 
-```
-Fase 1: Selenium → SQLite
-              ↓
-Fase 2: SQLite → PostgreSQL (Supabase)
-              ↓
-Fase 3: Dashboard web (Streamlit)
-              ↓
-Fase 4: GitHub Actions (automatización)
-              ↓
-Fase 5: Docker
-```
+![Arquitectura](assets/arquitectura_pipeline.svg)
 
 ---
 
@@ -39,26 +29,46 @@ Fase 5: Docker
 
 ## ⚙️ Instalación y uso
 
+### 🐳 Opción A — Con Docker (recomendado)
+Requiere tener [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado y mínimo 8GB de RAM.
 
+```bash
+# 1. Clonar el repositorio
+git clone https://github.com/barvl/mercado-libre-data-pipeline.git
+cd mercado-libre-data-pipeline
+
+# 2. Crear archivo .env en la raíz del proyecto
+# DATABASE_URL=postgresql://usuario:password@host:5432/postgres
+
+# 3. Levantar todos los contenedores
+docker-compose up
+```
+
+Esto levanta automáticamente:
+- 🕷️ **ml_scraper** — extrae productos de Mercado Libre
+- 🐘 **ml_sync** — sincroniza SQLite → PostgreSQL
+- 📊 **ml_dashboard** — dashboard en `http://localhost:8501`
+
+---
+### 🐍 Opción B — Sin Docker (manual)
+Requiere Python 3.11+ y Microsoft Edge instalado.
 
 ```bash
 # 1. Instalar dependencias
 pip install -r requirements.txt
 
-# 2. Fase 1 — Extrae datos y guarda en SQLite (corre cada hora)
-python ecommerce-pipeline-fase1/scripts/extract_load.py
+# 2. Crear archivo .env en ecommerce-pipeline-fase2/scripts/
+# DATABASE_URL=postgresql://usuario:password@host:5432/postgres
 
-# 3. Fase 2 — Sincroniza SQLite → PostgreSQL (corre cada hora)
-python ecommerce-pipeline-fase2/scripts/extract_load_pg.py
+# 3. Fase 1 — Extrae datos y guarda en SQLite
+python ecommerce-pipeline-fase1/scripts/extract_load.py
+# La Fase 2 se sincroniza automáticamente cada hora via GitHub Actions
 
 # 4. Fase 3 — Corre el dashboard web
-streamlit run fase_III/scripts/dashboard.py
+C:\ruta\a\python.exe -m streamlit run fase_III/scripts/dashboard.py
 
 # 5. Verificar datos en SQLite
 python ecommerce-pipeline-fase1/scripts/check_db.py
-
-# 6. Correr con Docker (requiere 8GB RAM)
-docker-compose up
 ```
 
 ---
@@ -128,6 +138,15 @@ mercadolibre-pipeline/
 ### Tabla de productos
 ![Tabla](assets/tabla_productos.png)
 
+
+---
+
+## 📈 Métricas del pipeline
+
+- ~960 productos extraídos por ejecución
+- Actualización automática cada 60 minutos
+- Tiempo promedio ETL: 4.2 minutos
+- +1,000 registros históricos almacenados
 
 ---
 
